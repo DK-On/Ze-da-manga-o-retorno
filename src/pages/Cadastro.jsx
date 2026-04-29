@@ -1,147 +1,50 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
-import { auth, db } from '../firebase'
+import { useState } from "react";
+import { auth, db } from "../firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Cadastro() {
-  const navigate = useNavigate()
+  const [formData, setFormData] = useState({ email: "", senha: "", nome: "", sobrenome: "", dataNascimento: "" });
+  const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    email:          '',
-    senha:          '',
-    nome:           '',
-    sobrenome:      '',
-    dataNascimento: '',
-  })
-  const [erro,      setErro]      = useState('')
-  const [sucesso,   setSucesso]   = useState(false)
-  const [carregando, setCarregando] = useState(false)
-
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setErro('')
-  }
-
-  async function handleCadastro() {
-    const { email, senha, nome, sobrenome, dataNascimento } = form
-
-    if (!email || !senha || !nome || !sobrenome || !dataNascimento) {
-      setErro('Preencha todos os campos.')
-      return
-    }
-
-    setCarregando(true)
+  const handleCadastro = async () => {
     try {
-      // 1. Cria o usuário no Firebase Authentication
-      const credencial = await createUserWithEmailAndPassword(auth, email, senha)
-      const uid = credencial.user.uid
-
-      // 2. Grava os dados adicionais no Firestore com o UID como ID do documento
-      await setDoc(doc(db, 'usuarios', uid), {
-        uid,
-        nome,
-        sobrenome,
-        dataNascimento,
-        email,
-        criadoEm: new Date().toISOString(),
-      })
-
-      setSucesso(true)
-      setTimeout(() => navigate('/login'), 1500)
-    } catch (err) {
-      const mensagens = {
-        'auth/email-already-in-use': 'Este e-mail já está cadastrado.',
-        'auth/weak-password':        'A senha deve ter pelo menos 6 caracteres.',
-        'auth/invalid-email':        'E-mail inválido.',
-      }
-      setErro(mensagens[err.code] || 'Erro ao cadastrar. Tente novamente.')
-    } finally {
-      setCarregando(false)
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.senha);
+      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
+        nome: formData.nome, sobrenome: formData.sobrenome, dataNascimento: formData.dataNascimento, uid: userCredential.user.uid
+      });
+      alert("Conta criada com sucesso!");
+      navigate("/principal");
+    } catch (error) {
+      alert("Erro ao cadastrar. Verifique os dados.");
     }
-  }
+  };
 
   return (
-    <div className="card">
-      <div className="logo-row">
-        <div className="logo-mark">CA</div>
-        <div>
-          <h1>Cadastro</h1>
-          <p className="subtitle">Crie sua conta</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-black bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-black to-black">
+      <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-10 rounded-3xl shadow-2xl">
+        <h2 className="text-3xl font-bold text-white mb-2">Nova Conta</h2>
+        <p className="mb-8 text-slate-400">Preencha seus dados para registrar.</p>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <input type="text" placeholder="Nome" onChange={e => setFormData({...formData, nome: e.target.value})} />
+            <input type="text" placeholder="Sobrenome" onChange={e => setFormData({...formData, sobrenome: e.target.value})} />
+          </div>
+          
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-slate-500 ml-1">Data de Nascimento</label>
+            <input type="date" className="w-full font-sans text-slate-400" onChange={e => setFormData({...formData, dataNascimento: e.target.value})} />
+          </div>
+
+          <input type="email" placeholder="E-mail" onChange={e => setFormData({...formData, email: e.target.value})} />
+          <input type="password" placeholder="Senha" onChange={e => setFormData({...formData, senha: e.target.value})} />
+          
+          <button onClick={handleCadastro} className="mt-4">Finalizar Cadastro</button>
         </div>
+        <p className="mt-8 text-center text-sm text-slate-500">Já possui conta? <Link to="/" className="text-orange-500 hover:text-orange-400">Fazer login</Link></p>
       </div>
-
-      <div className="divider" />
-
-      <div className="field">
-        <label htmlFor="nome">Nome</label>
-        <input
-          id="nome"
-          name="nome"
-          type="text"
-          placeholder="Seu nome"
-          value={form.nome}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="sobrenome">Sobrenome</label>
-        <input
-          id="sobrenome"
-          name="sobrenome"
-          type="text"
-          placeholder="Seu sobrenome"
-          value={form.sobrenome}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="dataNascimento">Data de Nascimento</label>
-        <input
-          id="dataNascimento"
-          name="dataNascimento"
-          type="date"
-          value={form.dataNascimento}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="email">E-mail</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="seu@email.com"
-          value={form.email}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="senha">Senha</label>
-        <input
-          id="senha"
-          name="senha"
-          type="password"
-          placeholder="Mínimo 6 caracteres"
-          value={form.senha}
-          onChange={handleChange}
-        />
-      </div>
-
-      {erro    && <div className="feedback error">{erro}</div>}
-      {sucesso && <div className="feedback success">Cadastro realizado! Redirecionando...</div>}
-
-      <button onClick={handleCadastro} disabled={carregando}>
-        {carregando ? 'Cadastrando...' : 'Cadastrar'}
-      </button>
-
-      <p className="link-texto">
-        Já tem conta? <Link to="/login">Fazer login</Link>
-      </p>
     </div>
-  )
+  );
 }
