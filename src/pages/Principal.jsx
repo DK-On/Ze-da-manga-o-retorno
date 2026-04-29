@@ -1,3 +1,4 @@
+import { auth, db } from "../firebase";
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
