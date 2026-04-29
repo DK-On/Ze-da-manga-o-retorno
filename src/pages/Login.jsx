@@ -1,84 +1,46 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase'
+import { useState } from "react";
+import { auth } from "../firebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const navigate = useNavigate();
 
-  const [email,      setEmail]      = useState('')
-  const [senha,      setSenha]      = useState('')
-  const [erro,       setErro]       = useState('')
-  const [carregando, setCarregando] = useState(false)
-
-  async function handleLogin() {
-    if (!email || !senha) {
-      setErro('Preencha todos os campos.')
-      return
-    }
-
-    setCarregando(true)
-    setErro('')
+  const handleLogin = async () => {
+    setErro("");
     try {
-      await signInWithEmailAndPassword(auth, email, senha)
-      navigate('/principal')
-    } catch (err) {
-      const mensagens = {
-        'auth/user-not-found':   'Usuário não está cadastrado.',
-        'auth/wrong-password':   'Usuário não está cadastrado.',
-        'auth/invalid-email':    'E-mail inválido.',
-        'auth/invalid-credential': 'Usuário não está cadastrado.',
-      }
-      setErro(mensagens[err.code] || 'Usuário não está cadastrado.')
-    } finally {
-      setCarregando(false)
+      await signInWithEmailAndPassword(auth, email, senha);
+      navigate("/principal");
+    } catch (error) {
+      setErro("Usuário não cadastrado ou senha incorreta.");
     }
-  }
+  };
 
   return (
-    <div className="card">
-      <div className="logo-row">
-        <div className="logo-mark">LG</div>
-        <div>
-          <h1>Login</h1>
-          <p className="subtitle">Acesse sua conta</p>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-black bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-black to-black">
+      <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-10 rounded-3xl shadow-2xl">
+        <header className="mb-10 text-center">
+          <h1 className="text-sm font-bold text-orange-500 uppercase tracking-widest mb-2 font-mono">Ze da Manga</h1>
+          <h2 className="text-4xl font-bold text-white tracking-tight">Bem-vindo</h2>
+          <p className="mt-2 text-slate-400">Faça login para acessar sua conta.</p>
+        </header>
+
+        {erro && <div className="mb-6 bg-red-950/50 border border-red-800 text-red-300 text-sm p-4 rounded-xl font-medium">{erro}</div>}
+
+        <div className="space-y-5">
+          <input type="email" placeholder="E-mail" onChange={e => setEmail(e.target.value)} />
+          <input type="password" placeholder="Senha" onChange={e => setSenha(e.target.value)} />
+          
+          <button onClick={handleLogin} className="mt-2">Acessar Painel</button>
         </div>
+
+        <p className="mt-8 text-center text-sm text-slate-500 font-medium">
+          Ainda não tem acesso? <Link to="/cadastro" className="text-orange-500 hover:text-orange-400">Criar conta agora</Link>
+        </p>
       </div>
-
-      <div className="divider" />
-
-      <div className="field">
-        <label htmlFor="email">E-mail</label>
-        <input
-          id="email"
-          type="email"
-          placeholder="seu@email.com"
-          value={email}
-          onChange={e => { setEmail(e.target.value); setErro('') }}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="senha">Senha</label>
-        <input
-          id="senha"
-          type="password"
-          placeholder="••••••••"
-          value={senha}
-          onChange={e => { setSenha(e.target.value); setErro('') }}
-          onKeyDown={e => e.key === 'Enter' && handleLogin()}
-        />
-      </div>
-
-      {erro && <div className="feedback error">{erro}</div>}
-
-      <button onClick={handleLogin} disabled={carregando}>
-        {carregando ? 'Acessando...' : 'Acessar'}
-      </button>
-
-      <p className="link-texto">
-        Não tem conta? <Link to="/cadastro">Cadastrar-se</Link>
-      </p>
     </div>
-  )
+  );
 }
